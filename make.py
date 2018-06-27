@@ -9,12 +9,16 @@ modify = {
     'dev': '/dev/ttyUSB0',
     'files': tests,
 }
+path = './core/'
+files = [
+    'boot.py',
+]
 
 # Filesystem test
 ampy_ls = 'ampy -p {mod[dev]} ls'
-ampy_put = 'ampy -p {mod[dev]} put {file}'
+ampy_put = 'ampy -p {mod[dev]} put {f}'
 ampy_put_all = 'ampy -p {mod[dev]} put {mod[files]}'
-ampy_rm = 'ampy -p {mod[dev]} rm {mod[files]}'
+ampy_rm = 'ampy -p {mod[dev]} rm {f}'
 ampy_run = 'ampy -p {mod[dev]} run {f}'
 
 
@@ -24,6 +28,12 @@ def run_ampy_cmd(command: str, **kwargs) -> bytes:
     return res.stdout
 
 
+def upload():
+    for filen in files:
+        run_ampy_cmd(ampy_rm, f=filen)
+        run_ampy_cmd(ampy_put, f=(path + filen))
+
+
 def run_tests():
     for i in tests:
         print(run_ampy_cmd(ampy_run, f=i).decode('utf-8'))
@@ -31,5 +41,6 @@ def run_tests():
 
 if __name__ == '__main__':
     fire.Fire({
+        'upload': upload,
         'test': run_tests,
     })
