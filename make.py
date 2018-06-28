@@ -22,10 +22,10 @@ ampy_rm = 'ampy -p {mod[dev]} rm {f}'
 ampy_run = 'ampy -p {mod[dev]} run {f}'
 
 
-def run_ampy_cmd(command: str, **kwargs) -> bytes:
+def run_ampy_cmd(command: str, **kwargs) -> str:
     cmd = command.format(**kwargs, mod=modify)
     res = subprocess.run(cmd.split(), stdout=subprocess.PIPE)
-    return res.stdout
+    return res.stdout.decode('utf-8')
 
 
 def upload():
@@ -36,7 +36,7 @@ def upload():
 
 def run_tests():
     for i in tests:
-        print(run_ampy_cmd(ampy_run, f=i).decode('utf-8'))
+        print(run_ampy_cmd(ampy_run, f=i))
 
 
 if __name__ == '__main__':
