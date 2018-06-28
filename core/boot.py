@@ -34,10 +34,13 @@ class Storrage:
         self.settings = settings
 
     def __search_alpha_pos(self, name):
-        with open(self.programs, 'r') as openedf, int() as line_number:
+        line_number = 0
+        with open(self.programs, 'r') as openedf:
             for line in openedf:
-                if [name, line].sort(key=natural_keys)[0] == name:
-                    return line_number
+                if name < line:
+                    openedf.close()
+                    return line_number + 1
                 else:
                     line_number += 1
         openedf.close()
+        return line_number
