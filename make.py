@@ -30,7 +30,8 @@ def run_ampy_cmd(command: str, **kwargs) -> str:
 
 def upload():
     for filen in files:
-        run_ampy_cmd(ampy_rm, f=filen)
+        if filen in run_ampy_cmd(ampy_ls).split('\n'):
+            run_ampy_cmd(ampy_rm, f=filen)
         run_ampy_cmd(ampy_put, f=(path + filen))
 
 
