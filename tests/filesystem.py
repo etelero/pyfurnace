@@ -1,5 +1,5 @@
 import os
-from boot import Storrage
+from main import Storrage
 
 err, ok = '[ERROR] ', '[OK] '
 

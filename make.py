@@ -12,6 +12,7 @@ modify = {
 path = './core/'
 files = [
     'boot.py',
+    'main.py',
 ]
 
 # Filesystem test
