@@ -13,6 +13,8 @@ path = './core/'
 files = [
     'boot.py',
     'main.py',
+    'lcd_api.py',
+    'i2c_lcd.py',
 ]
 
 # Filesystem test

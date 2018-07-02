@@ -4,7 +4,7 @@ from time import sleep
 
 spi = SPI(1, baudrate=10000, polarity=0, phase=0)
 stcp = Pin(15, Pin.OUT)
-oe = Pin(2, Pin.OUT)
+oe = Pin(16, Pin.OUT)
 sr = ShiftRegister(spi, stcp)
 
 oe.value(0)

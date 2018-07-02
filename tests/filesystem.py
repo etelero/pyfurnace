@@ -146,12 +146,12 @@ defs = [
     insert_delete_remove,
 ]
 
-if S.programs in os.listdir():
-    os.remove(S.programs)
-
 res = 1
 for i in defs:
     if res:  # iterrupt check
         res = i()
     else:
         print('Interrupting test execution')
+
+if fn in os.listdir():
+    os.remove(S.programs)
