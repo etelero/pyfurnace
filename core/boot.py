@@ -81,3 +81,14 @@ class Storrage:
         pfo_.close()
         os.remove(self.programs)
         os.rename(self.programs + '_', self.programs)
+
+
+class ShiftRegister:
+    def __init__(self, spi, latch_pin):
+        self.spi = spi
+        self.latch = latch_pin
+
+    def shift(self, buf):
+        self.spi.write(buf)
+        self.rclk.on()
+        self.rclk.off()
