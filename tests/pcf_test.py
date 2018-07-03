@@ -1,5 +1,8 @@
 from machine import I2C, Pin
 from pcf8574 import PCF8574
+from time import sleep_ms
+
+pcf_int = Pin(0, Pin.IN)
 
 ADDR = 0x20
 keypad = [
@@ -8,6 +11,16 @@ keypad = [
     '789C',
     '*0#D'
 ]
+interrupted = 0
+
+
+def inter(a):
+    # print(a)
+    global interrupted
+    interrupted += 1
+
+
+pcf_int.irq(trigger=Pin.IRQ_RISING, handler=inter)
 
 
 def scan(pcf):
@@ -32,11 +45,26 @@ def lookup(scan):
 i2c = I2C(scl=Pin(5), sda=Pin(4), freq=40000000)
 pcf = PCF8574(i2c, ADDR)
 
+
 for i in range(1000):
-    letter = lookup(scan(pcf))
-    if letter is not None:
+    try:
+        pressed = lookup(scan(pcf))
+    except ValueError:
+        print('lookup error')
+        sleep_ms(1)
+    if pressed is not None:
+        letter = pressed
+        while pressed is not None:
+            try:
+                pressed = lookup(scan(pcf))
+            except ValueError:
+                print('lookup error')
+                sleep_ms(1)
+
         print('key pressed: {}'.format(letter))
-        break
+        letter = None
+
+print("interrupted {} times".format(interrupted))
 
 del pcf
 del i2c
