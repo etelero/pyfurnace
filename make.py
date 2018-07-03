@@ -15,6 +15,7 @@ files = [
     'main.py',
     'lcd_api.py',
     'i2c_lcd.py',
+    'pcf8574.py',
 ]
 
 # Filesystem test
