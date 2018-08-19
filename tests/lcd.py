@@ -2,7 +2,7 @@ from time import sleep_ms
 from machine import I2C, Pin
 from i2c_lcd import I2cLcd
 
-DEFAULT_I2C_ADDR = 0x38
+DEFAULT_I2C_ADDR = 60
 
 
 def test_main():

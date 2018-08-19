@@ -4,7 +4,7 @@ from keypad import Keypad
 from machine import I2C, Pin
 from pcf8574 import PCF8574
 
-ADDR = 0x20
+ADDR = 56
 keymap = [
     '123A',
     '456B',
