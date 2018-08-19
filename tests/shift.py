@@ -8,7 +8,7 @@ oe = Pin(16, Pin.OUT)
 sr = ShiftRegister(spi, stcp)
 
 oe.value(0)
-sr.shift(bytearray([0]))
+sr.shift(bytearray([0,0,0,0]))
 
 print('[MANUAL] Shift test')
 for j in range(10, 100, 20):
@@ -28,7 +28,14 @@ oe.value(0.1)
 sleep(0.5)
 oe.value(0)
 sleep(0.5)
-sr.shift(bytearray([0b0]))
+# sr.shift(bytearray([0,0,0,0]))
+sr.shift(bytearray([255,0,0,0]))
+
+# sr.shift(bytearray([
+#     0b10000000,
+#     0b00100000,
+#     0b00010000,
+# ]))
 
 spi.deinit()
 del sr
