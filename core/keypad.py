@@ -1,4 +1,23 @@
-from time import sleep_ms
+import time
+
+class Exit(Exception):
+    pass
+
+
+class Accept(Exception):
+    pass
+
+
+class Delete(Exception):
+    pass
+
+
+class CharSwitch(Exception):
+    pass
+
+
+class Caps(Exception):
+    pass
 
 
 class SlowPress(Exception):
@@ -10,12 +29,15 @@ class SlowPress(Exception):
 
 
 class Keypad:
-    def __init__(self, pcf, matrix):
+    def __init__(self, pcf, matrix, charmap=None):
         self.pcf = pcf
         self.matrix = matrix
+        self.charmap = charmap
         self.mask = 0b1111
         self.cols = len(matrix)
         self.rows = len(matrix[0])
+        self.caps = False
+        self.lcd_pos = 0
 
     def _scan(self):
         press = bytearray(2)
@@ -50,7 +72,7 @@ class Keypad:
         try:
             pressed = self._lookup(self._scan())
         except SlowPress:
-            sleep_ms(1)
+            time.sleep_ms(1)
             pressed = self._lookup(self._scan())
 
         # Catching button up condition:
@@ -60,8 +82,84 @@ class Keypad:
                 try:
                     pressed = self._lookup(self._scan())
                 except SlowPress:
-                    sleep_ms(1)
+                    time.sleep_ms(1)
                     pressed = self._lookup(self._scan())
             return letter
         else:
             return None
+
+
+    def get_word(self, lcd):
+
+        def control(key, char=None):
+            if key == 'C':
+                raise Exit
+            elif key == 'A':
+                raise Accept(char)
+            elif key == 'D':
+                raise Delete(char)
+            elif key == '#':
+                raise Caps(char)
+            else:
+                pass
+
+        def get_char(fkey):
+            alpha = self.charmap[fkey]
+            pos = 0
+            pos_max = len(alpha) - 1
+            char = alpha[pos] if not self.caps else alpha[pos].upper()
+            lcd.move_to(self.lcd_pos, 1)
+            lcd.putstr(char)
+            start = time.ticks_ms()
+            while time.ticks_diff(time.ticks_ms(), start) < 1000:
+                key = self.getkey()
+                if key is not None:
+                    if key == fkey:
+                        start = time.ticks_ms()
+                        lcd.move_to(self.lcd_pos, 1)
+                        pos = pos + 1 if pos < pos_max else 0
+                        char = alpha[pos] if not self.caps \
+                            else alpha[pos].upper()
+                        lcd.putstr(char)
+                        key = None
+                    elif 48 <= ord(key) <= 57:
+                        self.lcd_pos += 1
+                        raise CharSwitch(char + key)
+                    else:
+                        control(key, char)
+            self.lcd_pos += 1
+            return char
+
+        word = ''
+        key = None
+        lcd.move_to(self.lcd_pos, 1)
+        try:
+            while True:
+                while key is None:
+                    key = self.getkey()
+                try:
+                    control(key)
+                    char = get_char(key)
+                    word += char
+                    key = None
+                except CharSwitch as ck:
+                    ck = str(ck)
+                    word += ck[0]
+                    key = ck[1]
+                except Delete as ck:
+                    if ck.args[0] is None:
+                        word = word[:-1]
+                        self.lcd_pos -= 1
+                    lcd.move_to(self.lcd_pos, 1)
+                    lcd.putstr(' ')
+                    key = None
+                except Caps as c:
+                    if c.args[0] is  not None:
+                        word += str(c)
+                        lcd.move_to(self.lcd_pos, 1)
+                        self.lcd_pos += 1
+                    self.caps = not self.caps
+                    key = None
+        except Accept as c:
+            word = word + str(c) if c.args[0] is not None else word
+            return word
