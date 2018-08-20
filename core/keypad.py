@@ -19,6 +19,9 @@ class CharSwitch(Exception):
 class Caps(Exception):
     pass
 
+class Unknown(Exception):
+    pass
+
 
 class SlowPress(Exception):
     def __init__(self, value):
@@ -89,7 +92,7 @@ class Keypad:
             return None
 
 
-    def get_word(self, lcd):
+    def get_word(self, lcd, num=False):
 
         def control(key, char=None):
             if key == 'C':
@@ -100,8 +103,8 @@ class Keypad:
                 raise Delete(char)
             elif key == '#':
                 raise Caps(char)
-            else:
-                pass
+            elif key in 'B*':
+                raise Unknown(char)
 
         def get_char(fkey):
             alpha = self.charmap[fkey]
@@ -139,7 +142,12 @@ class Keypad:
                     key = self.getkey()
                 try:
                     control(key)
-                    char = get_char(key)
+                    if not num:
+                        char = get_char(key)
+                    else:
+                        char = key
+                        lcd.putstr(key)
+                        self.lcd_pos += 1
                     word += char
                     key = None
                 except CharSwitch as ck:
@@ -152,6 +160,8 @@ class Keypad:
                         self.lcd_pos -= 1
                     lcd.move_to(self.lcd_pos, 1)
                     lcd.putstr(' ')
+                    if num:
+                        lcd.move_to(self.lcd_pos, 1)
                     key = None
                 except Caps as c:
                     if c.args[0] is  not None:
@@ -160,6 +170,11 @@ class Keypad:
                         self.lcd_pos += 1
                     self.caps = not self.caps
                     key = None
+                except Unknown:
+                    self.lcd_pos += 1
+                    key = None
+
         except Accept as c:
             word = word + str(c) if c.args[0] is not None else word
+            self.lcd_pos = 0
             return word

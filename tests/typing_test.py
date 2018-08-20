@@ -33,6 +33,11 @@ def test_main():
     except Exit:
         print('Received exit')
 
-
+    lcd.clear()
+    try:
+        word = keypad.get_word(lcd, True)
+        print("Got {} as input".format(word))
+    except Exit:
+        print('Received exit')
 
 test_main()
