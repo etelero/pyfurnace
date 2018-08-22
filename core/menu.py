@@ -75,12 +75,14 @@ class Navigation:
         self._draw()
 
     def enter(self):
-        menu = self.branch[-1]
-        if menu.cur_item().action is None:
-            self.branch.append(menu.cur_item().child)
+        # NOTE Fixed to work on site, chech for redundant conds
+        menu_item = self.branch[-1].cur_item()
+        if menu_item.action is None and menu_item.child is not None:
+            self.branch.append(menu_item.child)
             self._draw()
-        else:
-            menu.cur_item().action()
+        elif menu_item.action is not None:
+            menu_item.action()
+            self._draw() # added on site
 
     def level_up(self):
         if self.branch[-1].parent is not None:
