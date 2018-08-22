@@ -55,7 +55,8 @@ class Keypad:
         if press == b'\x0f\x0f':  # NOTE Magic
             return None
         if x == self.mask or y == self.mask:
-            raise SlowPress('')
+            return None
+            # raise SlowPress('')
         key = ''
         for c in range(self.cols):
             if y == self.mask ^ 1 << c:
