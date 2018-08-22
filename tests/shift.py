@@ -1,5 +1,5 @@
 from machine import SPI, Pin
-from main import ShiftRegister
+from pyfurnace import ShiftRegister
 from time import sleep
 
 spi = SPI(1, baudrate=10000, polarity=0, phase=0)
