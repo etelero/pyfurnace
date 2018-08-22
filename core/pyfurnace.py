@@ -186,7 +186,7 @@ def select_program():
             start = f.tell()
             prog = f.readline()
             prepln(prog)
-        elif key == 'C':
+        elif key == 'C' or key == '4': # NOTE added on site
             f.close()
             return
         elif key == '5' or key == '6':
