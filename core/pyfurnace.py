@@ -1,6 +1,6 @@
 import ure
 import os
-import time
+from time import sleep_ms
 from keypad import Keypad
 from machine import I2C, Pin, SPI
 from pcf8574 import PCF8574
@@ -198,13 +198,12 @@ def select_program():
 def operation(name, heat_time, cool_time):
     opto1 = 0
     pr501 = 0b00000001
-    pr502 = 0b00000010
-    door  = 0b00000100
-    fan   = 0b00001000
-    press = 0b00010000
-    walls = 0b00100000
-    flwop = 0b01000000
-    flwcl = 0b10000000
+    door  = 0b00000010
+    fan   = 0b00000100
+    press = 0b00001000
+    walls = 0b00010000
+    flwop = 0b00100000
+    flwcl = 0b01000000
     # Reg 2
     up    = 0b00000001
     down  = 0b00000010
@@ -218,45 +217,63 @@ def operation(name, heat_time, cool_time):
         while opto != mask:
             opto = pcf1.read8(opto_mask)
 
-    time.sleep_ms(1000)
+    def message(string, count=0):
+        lcd.clear()
+        lcd.move_to(0, 0)
+        lcd.putstr(string)
+        if count:
+            lcd.move_to(0, 1)
+            for t in range(count, 0, -1):
+                lcd.putstr('{} sec left  '.format(t))
+                sleep_ms(1000)
+                lcd.move_to(0, 1)
+            # message(string, count - 1)
+
+    message('Starting..\n{}'.format(name))
+    sleep_ms(1000)
     # Turn pr 501 on
+    message('Heating Oven...')
     shift_mask(pr501)
     wait_mask(0b11111110)
-    #Turn off pr501 and turn on pr 501
-    shift_mask(pr501 | pr502)
-    wait_mask(0b11111011) # 2nd broken
     # Open the door and go down
+    message('Cycle ctarted!')
     shift_mask(door)
-    time.sleep_ms(1000)
+    sleep_ms(3000)
     shift_mask(down, 2)
-    wait_mask(0b11110111) # down sw
+    wait_mask(0b11111011) # down sw 2nd broken
     shift_mask(down, 2)
     shift_mask(door)
     # Waiting
-    time.sleep(int(heat_time))
+    message('Heating glass.. \n', int(heat_time))
     # Going up
-    shift_mask(door | pr502)
-    time.sleep_ms(500)
-    shift_mask(up, 2)
+    message('Heated!')
+    shift_mask(door | pr501)
     shift_mask(fan)
-    # 1 sw
-    wait_mask(0b11101111)
+    sleep_ms(3000)
     shift_mask(up, 2)
+    # 1 sw
+    message('Pressing...')
+    wait_mask(0b11110111)
+    shift_mask(up, 2) # off
+    shift_mask(door)  # close
     shift_mask(press)
-    time.sleep_ms(4000)
+    sleep_ms(4000)
     shift_mask(press)
-    time.sleep_ms(1000)
+    sleep_ms(1000)
     # 2 sw
     shift_mask(up, 2)
-    wait_mask(0b11011111)
+    wait_mask(0b11101111)
     shift_mask(up, 2)
     shift_mask(walls)
-    time.sleep_ms(2000)
+    sleep_ms(2000)
     shift_mask(flwop)
-    time.sleep_ms(int(cool_time))
+    message('Cooling glass.. \n', int(cool_time))
     shift_mask(flwcl | flwop | walls | fan)
-    time.sleep_ms(1000)
-    shift_mask(flwop)
+    message('Cycle ended!')
+    sleep_ms(1000)
+    shift_mask(flwcl)
+    lcd.clear
+
 
 
 def load_program():
@@ -264,7 +281,6 @@ def load_program():
     if prog is not None:
         lcd.clear()
         lcd.move_to(0,0)
-        # lcd.putstr('Prog \"{}\"\nLoaded'.format(prog[:prog.find(',')]))
         res = prog.split(',')[:-1]
         operation(*res)
 
