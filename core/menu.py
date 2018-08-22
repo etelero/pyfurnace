@@ -80,7 +80,7 @@ class Navigation:
             self.branch.append(menu.cur_item().child)
             self._draw()
         else:
-            menu.cur_item.action()
+            menu.cur_item().action()
 
     def level_up(self):
         if self.branch[-1].parent is not None:
