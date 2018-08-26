@@ -89,6 +89,9 @@ class ShiftRegister:
         self.latch.on()
         self.latch.off()
 
+class SettingsErr(Exception):
+    pass
+
 # ## Main
 
 # # Setup:
@@ -210,15 +213,32 @@ def operation(name, heat_time, cool_time):
     # Reg 2
     up    = 0b00000001
     down  = 0b00000010
+    t_qty = 6
+    t_dict = {'t' + str(i): None for i in range(t_qty)}
+
+    def read_settings():
+        with open(storrage.settings, 'r') as openedf:
+                for line in openedf:
+                    # TODO make func:
+                    name, val = line.split(',')[:-1]
+                    try:
+                        t_dict[name] = val
+                    except KeyError:
+                        openedf.close()
+                        raise SettingsErr
+        print(t_dict)
+        openedf.close()
 
     def shift_mask(mask, reg=0,):
         BYTEARRAY[reg] ^= mask
+        BYTEARRAY[reg+1] ^= mask
         sr.shift(BYTEARRAY)
 
     def wait_mask(mask):
         opto = 0
         while opto != mask:
-            opto = pcf1.read8(opto_mask)
+            opto = pcf1.read8()
+        print(bin(opto))
 
     def message(string, count=0):
         lcd.clear()
@@ -232,18 +252,28 @@ def operation(name, heat_time, cool_time):
                 lcd.move_to(0, 1)
             # message(string, count - 1)
 
+    def wait(i):
+        sleep_ms(int(t_dict[i]))
+
+
+    try:
+        read_settings()
+    except SettingsErr:
+        message('Wrong settings!')
+        return
+
     message('Starting..\n{}'.format(name))
-    sleep_ms(1000)
+    wait('t0') # Iddle
     # Turn pr 501 on
     message('Heating Oven...')
     shift_mask(pr501)
-    wait_mask(0b11101001)
+    wait_mask(0b11111101)
     # Open the door and go down
     message('Cycle ctarted!')
     shift_mask(door)
-    sleep_ms(3000)
+    wait('t1') # Wait for door to open (3000)
     shift_mask(down, 2)
-    wait_mask(0b11101101) # down sw 2nd broken
+    wait_mask(0b11111011) # down sw 2nd broken
     shift_mask(down, 2)
     shift_mask(door)
     # Waiting
@@ -252,7 +282,7 @@ def operation(name, heat_time, cool_time):
     message('Heated!')
     shift_mask(door | pr501)
     shift_mask(fan)
-    sleep_ms(3000)
+    wait('t2') # Wait for door to open (3000)
     shift_mask(up, 2)
     # 1 sw
     message('Pressing...')
@@ -260,15 +290,15 @@ def operation(name, heat_time, cool_time):
     shift_mask(up, 2) # off
     shift_mask(door)  # close
     shift_mask(press)
-    sleep_ms(4000)
+    wait('t3') # Press time (4000)
     shift_mask(press)
-    sleep_ms(1000)
+    wait('t4') # Wait for press to open (1000)
     # 2 sw
     shift_mask(up, 2)
     wait_mask(0b11111011)
     shift_mask(up, 2)
     shift_mask(walls)
-    sleep_ms(2000)
+    wait('t5') # Wait for walls to close (2000)
     shift_mask(flwop)
     message('Cooling glass.. \n', int(cool_time))
     shift_mask(flwcl | flwop | walls | fan)
@@ -308,6 +338,17 @@ def delete_program():
         else:
             pass
 
+def change_settings():
+    setting = select_program()
+    lcd.clear()
+    lcd.move_to(0, 0)
+    lcd.putstr('New value(ms):\n')
+    t = keypad.get_word(lcd, True)
+    res = ','.split(setting)[0] + ',{},'.format(t)
+    storrage.delete_prog(setting)
+    storrage.incert_prog(res)
+
+
 menu_top_items = [
         'Programs',
         'Settings',
@@ -318,8 +359,8 @@ menu_programs_items = [
             'Delete'
 ]
 menu_settings_items = [
+            'Timing',
             'Network',
-            'Machine'
 ]
 
 menu_top = Menu("TOP MENU", menu_top_items)
@@ -330,6 +371,7 @@ menu_top.items[1].child = menu_settings
 menu_programs.items[0].action = load_program
 menu_programs.items[1].action = create_program
 menu_programs.items[2].action = delete_program
+menu_settings.items[0].action = change_settings
 nav = Navigation(lcd, keypad, menu_top)
 
 def run():
