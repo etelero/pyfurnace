@@ -196,7 +196,10 @@ def select_program():
             pass
 
 def operation(name, heat_time, cool_time):
-    opto1 = 0
+    """
+    Wait mask: 0b11101011
+    """
+    opto_mask = 0
     pr501 = 0b00000001
     door  = 0b00000010
     fan   = 0b00000100
@@ -234,13 +237,13 @@ def operation(name, heat_time, cool_time):
     # Turn pr 501 on
     message('Heating Oven...')
     shift_mask(pr501)
-    wait_mask(0b11111110)
+    wait_mask(0b11101001)
     # Open the door and go down
     message('Cycle ctarted!')
     shift_mask(door)
     sleep_ms(3000)
     shift_mask(down, 2)
-    wait_mask(0b11111011) # down sw 2nd broken
+    wait_mask(0b11101101) # down sw 2nd broken
     shift_mask(down, 2)
     shift_mask(door)
     # Waiting
@@ -253,7 +256,7 @@ def operation(name, heat_time, cool_time):
     shift_mask(up, 2)
     # 1 sw
     message('Pressing...')
-    wait_mask(0b11110111)
+    wait_mask(0b11100011)
     shift_mask(up, 2) # off
     shift_mask(door)  # close
     shift_mask(press)
@@ -262,7 +265,7 @@ def operation(name, heat_time, cool_time):
     sleep_ms(1000)
     # 2 sw
     shift_mask(up, 2)
-    wait_mask(0b11101111)
+    wait_mask(0b11111011)
     shift_mask(up, 2)
     shift_mask(walls)
     sleep_ms(2000)
