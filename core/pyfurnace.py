@@ -42,10 +42,9 @@ class Storrage:
         openedf.close()
         return line_number
 
-    def insert_prog(self, program) -> int:
-        pf = self.programs
+    def insert_ln(self, program, fname) -> int:
         pos = 0
-        with open(pf, 'r') as pfo, open(pf + '_', 'w') as pfo_:
+        with open(fname, 'r') as pfo, open(fname + '_', 'w') as pfo_:
             found = 0
             for ln in pfo:
                 if program < ln and not found:
@@ -61,13 +60,12 @@ class Storrage:
                 # pos += 1
         pfo.close()
         pfo_.close()
-        os.remove(self.programs)
-        os.rename(self.programs + '_', self.programs)
+        os.remove(fname)
+        os.rename(fname + '_', fname)
         return pos
 
-    def delete_prog(self, program):
-        pf = self.programs
-        with open(pf, 'r') as pfo, open(pf + '_', 'w') as pfo_:
+    def delete_ln(self, program, fname):
+        with open(fname, 'r') as pfo, open(fname + '_', 'w') as pfo_:
             for ln in pfo:
                 if str(ln).strip('\n') == program:
                     pass
@@ -75,8 +73,8 @@ class Storrage:
                     pfo_.write(ln)
         pfo.close()
         pfo_.close()
-        os.remove(self.programs)
-        os.rename(self.programs + '_', self.programs)
+        os.remove(fname)
+        os.rename(fname + '_', fname)
 
 
 class ShiftRegister:
@@ -148,12 +146,12 @@ def create_program():
     prep("COOL TIME:")
     prog += keypad.get_word(lcd, True) + ','
 
-    if storrage.insert_prog(prog):
+    if storrage.insert_ln(prog, storrage.programs):
         return 1
     else:
         return 0
 
-def select_program():
+def select_line(mode):
 
     def prepln(ln):
         lcd.putstr(ln[:ln.find(',')])
@@ -166,9 +164,9 @@ def select_program():
         while f.read(1) != '\n' and f.tell() > 1:
             f.seek(-2, 1)
         return f.tell()
-
-    last_byte = os.stat(storrage.programs)[6] - 1
-    f = open(storrage.programs, 'r')
+    fname = storrage.programs if mode == 0 else storrage.settings
+    last_byte = os.stat(fname)[6] - 1
+    f = open(fname, 'r')
     last = len(f.readlines()) - 1
     f.seek(0)
     start = 0
@@ -310,7 +308,7 @@ def operation(name, heat_time, cool_time):
 
 
 def load_program():
-    prog = select_program()
+    prog = select_line(0)
     if prog is not None:
         lcd.clear()
         lcd.move_to(0,0)
@@ -318,7 +316,7 @@ def load_program():
         operation(*res)
 
 def delete_program():
-    prog = select_program()
+    prog = select_line(0)
     lcd.clear()
     lcd.move_to(0,0)
     lcd.putstr(
@@ -328,7 +326,7 @@ def delete_program():
     while True:
         key = keypad.getkey()
         if key == 'A':
-            storrage.delete_prog(prog.strip('\n'))
+            storrage.delete_ln(prog.strip('\n'), storrage.programs)
             lcd.clear()
             lcd.move_to(0, 0)
             lcd.putstr('  Deleted!')
@@ -339,14 +337,14 @@ def delete_program():
             pass
 
 def change_settings():
-    setting = select_program()
+    setting = select_line(1)
     lcd.clear()
     lcd.move_to(0, 0)
     lcd.putstr('New value(ms):\n')
     t = keypad.get_word(lcd, True)
-    res = ','.split(setting)[0] + ',{},'.format(t)
-    storrage.delete_prog(setting)
-    storrage.incert_prog(res)
+    res = setting.split(',')[0] + ',{},'.format(t)
+    storrage.delete_ln(setting.strip('\n'), storrage.settings)
+    storrage.insert_ln(res, storrage.settings)
 
 
 menu_top_items = [
