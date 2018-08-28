@@ -204,10 +204,11 @@ def operation(name, heat_time, cool_time):
     pr501 = 0b00000001
     door  = 0b00000010
     fan   = 0b00000100
-    press = 0b00001000
+    flow  = 0b00001000
     walls = 0b00010000
-    flwop = 0b00100000
-    flwcl = 0b01000000
+    press = 0b00100000
+    wiggl = 0b01000000
+    loose = 0b10000000
     # Reg 2
     up    = 0b00000001
     down  = 0b00000010
@@ -224,7 +225,6 @@ def operation(name, heat_time, cool_time):
                     except KeyError:
                         openedf.close()
                         raise SettingsErr
-        print(t_dict)
         openedf.close()
 
     def shift_mask(mask, reg=0,):
@@ -236,7 +236,6 @@ def operation(name, heat_time, cool_time):
         opto = 0
         while opto != mask:
             opto = pcf1.read8()
-        print(bin(opto))
 
     def message(string, count=0):
         lcd.clear()
@@ -265,13 +264,18 @@ def operation(name, heat_time, cool_time):
     # Turn pr 501 on
     message('Heating Oven...')
     shift_mask(pr501)
-    wait_mask(0b11111101)
+    while True:
+        opto_1 = pcf1.read8()
+        if opto_1 == 0b11101001 \
+           or opto_1 == 0b11100001 \
+           or opto_1 == 0b11111001:
+            break
     # Open the door and go down
     message('Cycle ctarted!')
     shift_mask(door)
     wait('t1') # Wait for door to open (3000)
     shift_mask(down, 2)
-    wait_mask(0b11111011) # down sw 2nd broken
+    wait_mask(0b11101101) # down
     shift_mask(down, 2)
     shift_mask(door)
     # Waiting
@@ -289,7 +293,7 @@ def operation(name, heat_time, cool_time):
     shift_mask(door)  # close
     shift_mask(press)
     wait('t3') # Press time (4000)
-    shift_mask(press)
+    shift_mask(press | loose)
     wait('t4') # Wait for press to open (1000)
     # 2 sw
     shift_mask(up, 2)
@@ -297,12 +301,12 @@ def operation(name, heat_time, cool_time):
     shift_mask(up, 2)
     shift_mask(walls)
     wait('t5') # Wait for walls to close (2000)
-    shift_mask(flwop)
+    shift_mask(flow)
+    shift_mask(wiggl)
     message('Cooling glass.. \n', int(cool_time))
-    shift_mask(flwcl | flwop | walls | fan)
+    shift_mask(flow | walls | fan | wiggl | loose) # switch closing pipe off
     message('Cycle ended!')
     sleep_ms(1000)
-    shift_mask(flwcl)
     lcd.clear
 
 
