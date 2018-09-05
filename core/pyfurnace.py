@@ -2,6 +2,7 @@ import ure
 import os
 from time import sleep_ms
 from keypad import Keypad
+from keypad import Exit
 from machine import I2C, Pin, SPI
 from pcf8574 import PCF8574
 from i2c_lcd import I2cLcd
@@ -90,6 +91,9 @@ class ShiftRegister:
 class SettingsErr(Exception):
     pass
 
+class CancelSignal(Exception):
+    pass
+
 # ## Main
 
 # # Setup:
@@ -140,11 +144,14 @@ def create_program():
 
     prog = ''
     prep("NAME:")
-    prog += keypad.get_word(lcd) + ','
-    prep("HEAT TIME:")
-    prog += keypad.get_word(lcd, True) + ','
-    prep("COOL TIME:")
-    prog += keypad.get_word(lcd, True) + ','
+    try:
+        prog += keypad.get_word(lcd) + ','
+        prep("HEAT TIME:")
+        prog += keypad.get_word(lcd, True) + ','
+        prep("COOL TIME:")
+        prog += keypad.get_word(lcd, True) + ','
+    except Exit:
+        return
 
     if storrage.insert_ln(prog, storrage.programs):
         return 1
@@ -164,13 +171,17 @@ def select_line(mode):
         while f.read(1) != '\n' and f.tell() > 1:
             f.seek(-2, 1)
         return f.tell()
-    fname = storrage.programs if mode == 0 else storrage.settings
+    fname = storrage.programs if mode in 'ld' else storrage.settings
     last_byte = os.stat(fname)[6] - 1
     f = open(fname, 'r')
     last = len(f.readlines()) - 1
     f.seek(0)
     start = 0
-    prep('SELECT PROGRAM:')
+    if mode in 'ld':
+        prep('SELECT PROGRAM:')
+    elif mode == 's':
+        prep('SELECT SETTING:')
+
     prog = f.readline()
     prepln(prog)
 
@@ -189,8 +200,11 @@ def select_line(mode):
             prepln(prog)
         elif key == 'C' or key == '4': # NOTE added on site
             f.close()
-            return
+            raise CancelSignal
         elif key == '5' or key == '6':
+            f.close()
+            return prog
+        elif mode == 'd' and key == 'D':
             f.close()
             return prog
         else:
@@ -217,14 +231,14 @@ def operation(name, heat_time, cool_time):
 
     def read_settings():
         with open(storrage.settings, 'r') as openedf:
-                for line in openedf:
-                    # TODO make func:
-                    name, val = line.split(',')[:-1]
-                    try:
-                        t_dict[name] = val
-                    except KeyError:
-                        openedf.close()
-                        raise SettingsErr
+            for line in openedf:
+                # TODO make func:
+                name, val = line.split(',')[:-1]
+                try:
+                    t_dict[name] = val
+                except KeyError:
+                    openedf.close()
+                    raise SettingsErr
         openedf.close()
 
     def shift_mask(mask, reg=0,):
@@ -312,7 +326,10 @@ def operation(name, heat_time, cool_time):
 
 
 def load_program():
-    prog = select_line(0)
+    try:
+        prog = select_line('l')
+    except CancelSignal:
+        return
     if prog is not None:
         lcd.clear()
         lcd.move_to(0,0)
@@ -320,7 +337,10 @@ def load_program():
         operation(*res)
 
 def delete_program():
-    prog = select_line(0)
+    try:
+        prog = select_line('d')
+    except CancelSignal:
+        return
     lcd.clear()
     lcd.move_to(0,0)
     lcd.putstr(
@@ -341,11 +361,17 @@ def delete_program():
             pass
 
 def change_settings():
-    setting = select_line(1)
+    try:
+        setting = select_line('s')
+    except CancelSignal:
+        return
     lcd.clear()
     lcd.move_to(0, 0)
     lcd.putstr('New value(ms):\n')
-    t = keypad.get_word(lcd, True)
+    try:
+        t = keypad.get_word(lcd, True)
+    except Exit:
+        return
     res = setting.split(',')[0] + ',{},'.format(t)
     storrage.delete_ln(setting.strip('\n'), storrage.settings)
     storrage.insert_ln(res, storrage.settings)
@@ -393,6 +419,7 @@ def run():
                 }[key](nav)
             except KeyError:
                 if key == 'C':
-                    break
+                    pass
+                    # break
                 else:
                     pass
