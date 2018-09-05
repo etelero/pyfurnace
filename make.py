@@ -45,8 +45,16 @@ def run_tests():
         print(run_ampy_cmd(ampy_run, f=i))
 
 
+def remove():
+    for filen in files:
+        if filen in run_ampy_cmd(ampy_ls).split('\n'):
+            run_ampy_cmd(ampy_rm, f=filen)
+        run_ampy_cmd(ampy_rm, f=(filen))
+
+
 if __name__ == '__main__':
     fire.Fire({
         'upload': upload,
         'test': run_tests,
+        'remove': remove
     })
