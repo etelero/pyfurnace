@@ -13,10 +13,12 @@ path = './core/'
 files = [
     'boot.py',
     'main.py',
-    'lcd_api.py',
-    'i2c_lcd.py',
-    'pcf8574.py',
-    'keypad.py',
+    'pyfurnace.mpy',
+    'menu.mpy',
+    'lcd_api.mpy',
+    'i2c_lcd.mpy',
+    'pcf8574.mpy',
+    'keypad.mpy',
 ]
 
 # Filesystem test
