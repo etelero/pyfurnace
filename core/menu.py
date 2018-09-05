@@ -67,10 +67,10 @@ class Navigation:
     def up(self):
         menu = self.branch[-1]
         if menu.pos >= 1:
-            target = menu.items[menu.pos-1]
+            # target = menu.items[menu.pos-1]
             menu.pos -= 1
         else:
-            target = menu.items[-1]
+            # target = menu.items[-1]
             menu.pos = len(menu.items) - 1
         self._draw()
 
@@ -82,7 +82,7 @@ class Navigation:
             self._draw()
         elif menu_item.action is not None:
             menu_item.action()
-            self._draw() # added on site
+            self._draw()  # added on site
 
     def level_up(self):
         if self.branch[-1].parent is not None:
