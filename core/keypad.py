@@ -1,5 +1,6 @@
 import time
 
+
 class Exit(Exception):
     pass
 
@@ -18,6 +19,7 @@ class CharSwitch(Exception):
 
 class Caps(Exception):
     pass
+
 
 class Unknown(Exception):
     pass
@@ -92,7 +94,6 @@ class Keypad:
         else:
             return None
 
-
     def get_word(self, lcd, num=False):
 
         def control(key, char=None):
@@ -165,7 +166,7 @@ class Keypad:
                         lcd.move_to(self.lcd_pos, 1)
                     key = None
                 except Caps as c:
-                    if c.args[0] is  not None:
+                    if c.args[0] is not None:
                         word += str(c)
                         lcd.move_to(self.lcd_pos, 1)
                         self.lcd_pos += 1
